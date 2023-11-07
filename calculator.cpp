@@ -21,33 +21,33 @@ float prim(Parser& parser) {
 	parser.get_lexem();
 
 	switch (parser.get_last().type) {
-	case LT_Number: {
-		const float val = parser.get_last().value;
-	    parser.get_lexem();
-	    return val; 
-	}
-	case LT_Identifier: {
-	    std::string name(parser.get_last().name);
-	    parser.get_lexem();
-	    return NT.GetVariable(name); 
-	}
-	case LT_Delimiter:
-		switch(parser.get_last().delimiter) {
-			case '-':
-				return -prim(parser);
-			case '(': {
-				float val = evaluate_expression(parser);
-				if (parser.get_last().type == LT_Delimiter && parser.get_last().delimiter == ')') {
-					parser.get_lexem();
-					return val;
-                }
-				throw R"(')' expected)";
-			}
-            default: {
-                throw "primary expected";
-            }
+		case LT_Number: {
+			const float val = parser.get_last().value;
+			parser.get_lexem();
+			return val;
 		}
-		default:{
+		case LT_Identifier: {
+			std::string name(parser.get_last().name);
+			parser.get_lexem();
+			return NT.GetVariable(name);
+		}
+		case LT_Delimiter:
+			switch (parser.get_last().delimiter) {
+				case '-':
+					return -prim(parser);
+				case '(': {
+					const float val = evaluate_expression(parser);
+					if (parser.get_last().type == LT_Delimiter && parser.get_last().delimiter == ')') {
+						parser.get_lexem();
+						return val;
+					}
+					throw R"(')' expected)";
+				}
+				default: {
+					throw "primary expected";
+				}
+			}
+		default: {
 			throw "primary expected";
 		}
 	}
@@ -57,30 +57,32 @@ float prim(Parser& parser) {
 float term(Parser& parser) {
 	float left = prim(parser);
 
-	while(true) {
+	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
 				case '*':
 					left *= prim(parser);
 					break;
+				//TODO: добавил новый операнд
 				case '^':
 					left = pow(left, prim(parser));
 					break;
 				case '/': {
 					constexpr float precision = 1.0e-5f;
-					float d = prim(parser);
-					if (fabs(d) < precision) {
+                    const float d = prim(parser);
+					//TODO: поменял знак
+					if (fabs(d) > precision) {
 						left /= d;
 					} else {
 						throw "Divide by zero";
 					}
 				}
-					break;
+				break;
 				default:
 					return left;
 			}
 		} else {
-		return left;
+			return left;
 		}
 	}
 }
@@ -89,17 +91,17 @@ float term(Parser& parser) {
 float plus_minus(Parser& parser) {
 	float left = term(parser);
 
-	while(true) {
+	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
 				case '+':
-				left += term(parser);
-			break;
-			case '-':
-				left -= term(parser);
-				break;
-			default:
-				return left;
+					left += term(parser);
+					break;
+				case '-':
+					left -= term(parser);
+					break;
+				default:
+					return left;
 			}
 		} else {
 			return left;
@@ -112,20 +114,20 @@ float plus_minus(Parser& parser) {
 float evaluate_expression(Parser& parser) {
 	float left = plus_minus(parser);
 
-	while(true) {
+	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
 				case '<':
-				left = left < plus_minus(parser);
-			break;
-			case '>':
-				left = left > plus_minus(parser);
-			break;
-			case '=':
-				left = left == plus_minus(parser);
-			break;
-			default:
-				return left;
+					left = left < plus_minus(parser);
+					break;
+				case '>':
+					left = left > plus_minus(parser);
+					break;
+				case '=':
+					left = left == plus_minus(parser);
+					break;
+				default:
+					return left;
 			}
 		} else {
 			return left;

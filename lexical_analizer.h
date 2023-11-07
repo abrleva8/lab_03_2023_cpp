@@ -44,7 +44,7 @@ public:
 	std::istream& in;
 	Lexem         last;
 	int           line_number;
-	Parser(std::istream& str);
+	explicit Parser(std::istream& str);
 	Lexem get_lexem();            // считать следующую лексему
 	Lexem get_last();             // вернуть предыдущую лексему
 
