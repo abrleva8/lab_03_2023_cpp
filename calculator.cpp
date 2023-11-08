@@ -31,10 +31,8 @@ float prim(Parser& parser) {
 			parser.get_lexem();
 			return NT.GetVariable(name);
 		}
-		case LT_Delimiter:
-			switch (parser.get_last().delimiter) {
-				case '-':
-					return -prim(parser);
+		case LT_Delimiter: switch (parser.get_last().delimiter) {
+				case '-': return -prim(parser);
 				case '(': {
 					const float val = evaluate_expression(parser);
 					if (parser.get_last().type == LT_Delimiter && parser.get_last().delimiter == ')') {
@@ -54,22 +52,39 @@ float prim(Parser& parser) {
 }
 
 // Обрабатывает умножение и деление
-float term(Parser& parser) {
+float term_pow(Parser& parser) {
 	float left = prim(parser);
 
 	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
-				case '*':
-					left *= prim(parser);
+				case '^':{
+					left = pow(left, prim(parser));
+				}
+				break;
+				default: return left;
+			}
+		} else {
+			return left;
+		}
+	}
+}
+
+// Обрабатывает умножение и деление
+float term(Parser& parser) {
+    float left = term_pow(parser);
+
+	while (true) {
+		if (parser.get_last().type == LT_Delimiter) {
+			switch (parser.get_last().delimiter) {
+				case '*': left *= term_pow(parser);
 					break;
 				//TODO: добавил новый операнд
-				case '^':
-					left = pow(left, prim(parser));
-					break;
+				/*case '^': left = pow(left, term_pow(parser));
+					break;*/
 				case '/': {
 					constexpr float precision = 1.0e-5f;
-                    const float d = prim(parser);
+					const float d = term_pow(parser);
 					//TODO: поменял знак
 					if (fabs(d) > precision) {
 						left /= d;
@@ -78,8 +93,7 @@ float term(Parser& parser) {
 					}
 				}
 				break;
-				default:
-					return left;
+				default: return left;
 			}
 		} else {
 			return left;
@@ -94,14 +108,11 @@ float plus_minus(Parser& parser) {
 	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
-				case '+':
-					left += term(parser);
+				case '+': left += term(parser);
 					break;
-				case '-':
-					left -= term(parser);
+				case '-': left -= term(parser);
 					break;
-				default:
-					return left;
+				default: return left;
 			}
 		} else {
 			return left;
@@ -117,17 +128,13 @@ float evaluate_expression(Parser& parser) {
 	while (true) {
 		if (parser.get_last().type == LT_Delimiter) {
 			switch (parser.get_last().delimiter) {
-				case '<':
-					left = left < plus_minus(parser);
+				case '<': left = left < plus_minus(parser);
 					break;
-				case '>':
-					left = left > plus_minus(parser);
+				case '>': left = left > plus_minus(parser);
 					break;
-				case '=':
-					left = left == plus_minus(parser);
+				case '=': left = left == plus_minus(parser);
 					break;
-				default:
-					return left;
+				default: return left;
 			}
 		} else {
 			return left;
